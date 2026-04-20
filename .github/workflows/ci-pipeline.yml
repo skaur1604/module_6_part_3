@@ -13,18 +13,38 @@ jobs:
       - name: Checkout app repository
         uses: actions/checkout@v5
 
+      - name: Check required secrets exist
+        run: |
+          if [ -z "${{ secrets.CR_PAT }}" ]; then echo "CR_PAT is missing"; exit 1; else echo "CR_PAT exists"; fi
+          if [ -z "${{ secrets.GITOPS_PAT }}" ]; then echo "GITOPS_PAT is missing"; exit 1; else echo "GITOPS_PAT exists"; fi
+          if [ -z "${{ secrets.GITOPS_REPO }}" ]; then echo "GITOPS_REPO is missing"; exit 1; else echo "GITOPS_REPO exists"; fi
+
+      - name: Show repository info
+        run: |
+          echo "GitHub actor: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "GitOps repo: ${{ secrets.GITOPS_REPO }}"
+
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        run: |
+          echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
 
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+        run: |
+          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
 
       - name: Clone GitOps repository
         run: |
           git clone https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/${{ secrets.GITOPS_REPO }} gitops-repo
+
+      - name: Check GitOps files
+        run: |
+          ls -la gitops-repo
+          ls -la gitops-repo/k8s
 
       - name: Update deployment manifest in GitOps repository
         run: |
