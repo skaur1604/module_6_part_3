@@ -15,9 +15,10 @@ spec:
         app: student-app
     spec:
       imagePullSecrets:
-        - name: ghcr-creds  
+        - name: ghcr-creds
       containers:
         - name: student-app
           image: ghcr.io/skaur1604/module_6_part_3:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
